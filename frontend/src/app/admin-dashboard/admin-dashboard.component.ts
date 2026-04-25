@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AttendanceService, Attendance, User } from '../services/attendance.service';
+import { Router } from '@angular/router';
+import { AttendanceService, Attendance, User, LeaveStats } from '../services/attendance.service';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -9,8 +10,63 @@ import { AttendanceService, Attendance, User } from '../services/attendance.serv
   imports: [CommonModule, FormsModule],
   template: `
     <div class="admin-dashboard">
+      <div class="nav-section card">
+        <h3>快捷导航</h3>
+        <div class="nav-grid">
+          <button (click)="goToApproval()" class="nav-card approval">
+            <span class="nav-icon">📋</span>
+            <span class="nav-label">请假审批</span>
+            <span *ngIf="leaveStats?.monthly_pending_count > 0" class="nav-badge">
+              {{ leaveStats.monthly_pending_count }}
+            </span>
+          </button>
+          <button (click)="goToAllLeaves()" class="nav-card history">
+            <span class="nav-icon">📊</span>
+            <span class="nav-label">请假记录</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="leave-stats-section card">
+        <h3>请假统计概览</h3>
+        <div class="leave-stats-grid">
+          <div class="leave-stat-card today">
+            <div class="stat-icon">👥</div>
+            <div class="stat-content">
+              <p class="stat-value">{{ leaveStats?.today_leave_count || 0 }}</p>
+              <p class="stat-label">今日请假人数</p>
+            </div>
+          </div>
+          <div class="leave-stat-card pending">
+            <div class="stat-icon">⏳</div>
+            <div class="stat-content">
+              <p class="stat-value">{{ leaveStats?.monthly_pending_count || 0 }}</p>
+              <p class="stat-label">本月待审批</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="pie-chart-section" *ngIf="hasLeaveData()">
+          <h4>本月各类型请假天数分布</h4>
+          <div class="pie-chart-container">
+            <div class="pie-chart" [style.background]="getPieChartGradient()">
+              <div class="pie-center"></div>
+            </div>
+            <div class="pie-legend">
+              <div class="legend-item" *ngFor="let item of leaveStats?.leave_type_distribution">
+                <span class="legend-color" [class]="item.type"></span>
+                <span class="legend-label">{{ item.label }}: {{ item.days }} 天</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div *ngIf="!hasLeaveData()" class="no-leave-data">
+          <p>本月暂无请假数据</p>
+        </div>
+      </div>
+
       <div class="filter-section card">
-        <h3>筛选条件</h3>
+        <h3>考勤筛选条件</h3>
         <div class="filter-form">
           <div class="form-group">
             <label>开始日期</label>
@@ -76,7 +132,8 @@ import { AttendanceService, Attendance, User } from '../services/attendance.serv
                         [class.status-late]="record.overall_status === 'late'"
                         [class.status-severe]="record.overall_status === 'severe_late'"
                         [class.status-early]="record.overall_status === 'early_leave'"
-                        [class.status-absent]="record.overall_status === 'absent'">
+                        [class.status-absent]="record.overall_status === 'absent'"
+                        [class.status-leave]="record.overall_status === 'leave'">
                     {{ getStatusLabel(record.overall_status) }}
                   </span>
                 </td>
@@ -115,6 +172,10 @@ import { AttendanceService, Attendance, User } from '../services/attendance.serv
             <p class="stat-value">{{ getStatusCount('absent') }}</p>
             <p class="stat-label">缺勤次数</p>
           </div>
+          <div class="stat-card leave">
+            <p class="stat-value">{{ getStatusCount('leave') }}</p>
+            <p class="stat-label">请假次数</p>
+          </div>
         </div>
       </div>
     </div>
@@ -135,6 +196,169 @@ import { AttendanceService, Attendance, User } from '../services/attendance.serv
       margin: 0 0 1.5rem 0;
       color: #333;
       font-size: 1.25rem;
+    }
+    .card h4 {
+      margin: 0 0 1rem 0;
+      color: #555;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+    .nav-section {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    .nav-section h3 {
+      color: white;
+    }
+    .nav-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+    .nav-card {
+      position: relative;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 10px;
+      padding: 1.25rem;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .nav-card:hover {
+      background: rgba(255, 255, 255, 0.25);
+      transform: translateY(-2px);
+    }
+    .nav-icon {
+      font-size: 2rem;
+    }
+    .nav-label {
+      font-size: 1rem;
+      font-weight: 600;
+    }
+    .nav-badge {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: #ff6b6b;
+      color: white;
+      padding: 0.25rem 0.625rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      min-width: 24px;
+      text-align: center;
+    }
+    .leave-stats-section {
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    }
+    .leave-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .leave-stat-card {
+      background: white;
+      border-radius: 10px;
+      padding: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+    .leave-stat-card .stat-icon {
+      font-size: 2.5rem;
+    }
+    .leave-stat-card .stat-content {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    .leave-stat-card .stat-value {
+      margin: 0;
+      font-size: 2rem;
+      font-weight: 700;
+      color: #333;
+    }
+    .leave-stat-card .stat-label {
+      margin: 0;
+      font-size: 0.875rem;
+      color: #666;
+    }
+    .leave-stat-card.today .stat-value {
+      color: #667eea;
+    }
+    .leave-stat-card.pending .stat-value {
+      color: #ffc107;
+    }
+    .pie-chart-section {
+      background: white;
+      border-radius: 10px;
+      padding: 1.25rem;
+    }
+    .pie-chart-container {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+    .pie-chart {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      position: relative;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    .pie-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 70px;
+      height: 70px;
+      background: white;
+      border-radius: 50%;
+    }
+    .pie-legend {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .legend-color {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+    }
+    .legend-color.personal {
+      background: #1976d2;
+    }
+    .legend-color.sick {
+      background: #c2185b;
+    }
+    .legend-color.annual {
+      background: #388e3c;
+    }
+    .legend-label {
+      font-size: 0.875rem;
+      color: #555;
+    }
+    .no-leave-data {
+      text-align: center;
+      padding: 1.5rem;
+      background: white;
+      border-radius: 10px;
+      color: #666;
+    }
+    .no-leave-data p {
+      margin: 0;
     }
     .filter-section {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -272,6 +496,10 @@ import { AttendanceService, Attendance, User } from '../services/attendance.serv
       background: #fee;
       color: #c00;
     }
+    .status-badge.status-leave {
+      background: #e3f2fd;
+      color: #1565c0;
+    }
     .no-data, .loading {
       text-align: center;
       color: #999;
@@ -311,6 +539,9 @@ import { AttendanceService, Attendance, User } from '../services/attendance.serv
     .stat-card.absent .stat-value {
       color: #dc3545;
     }
+    .stat-card.leave .stat-value {
+      color: #667eea;
+    }
   `]
 })
 export class AdminDashboardComponent implements OnInit {
@@ -322,12 +553,17 @@ export class AdminDashboardComponent implements OnInit {
   loading = false;
   exporting = false;
   totalEmployees = 0;
+  leaveStats: LeaveStats | null = null;
 
-  constructor(private attendanceService: AttendanceService) {}
+  constructor(
+    private attendanceService: AttendanceService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
     this.setDefaultDates();
     this.loadEmployees();
+    this.loadLeaveStats();
     this.search();
   }
 
@@ -350,6 +586,15 @@ export class AdminDashboardComponent implements OnInit {
       next: (data) => {
         this.employees = data;
         this.totalEmployees = data.length;
+      },
+      error: () => {}
+    });
+  }
+
+  loadLeaveStats(): void {
+    this.attendanceService.getLeaveStats().subscribe({
+      next: (data) => {
+        this.leaveStats = data;
       },
       error: () => {}
     });
@@ -397,6 +642,55 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
+  goToApproval(): void {
+    this.router.navigate(['/admin/approval']);
+  }
+
+  goToAllLeaves(): void {
+    this.router.navigate(['/admin/approval']);
+  }
+
+  hasLeaveData(): boolean {
+    if (!this.leaveStats?.leave_type_distribution) return false;
+    return this.leaveStats.leave_type_distribution.some(item => item.days > 0);
+  }
+
+  getPieChartGradient(): string {
+    if (!this.leaveStats?.leave_type_distribution) {
+      return '#f5f5f5';
+    }
+
+    const distribution = this.leaveStats.leave_type_distribution;
+    const total = distribution.reduce((sum, item) => sum + item.days, 0);
+
+    if (total === 0) {
+      return '#f5f5f5';
+    }
+
+    const colors: Record<string, string> = {
+      'personal': '#1976d2',
+      'sick': '#c2185b',
+      'annual': '#388e3c'
+    };
+
+    let currentPercent = 0;
+    const stops: string[] = [];
+
+    for (const item of distribution) {
+      if (item.days > 0) {
+        const startPercent = currentPercent;
+        currentPercent += (item.days / total) * 100;
+        stops.push(`${colors[item.type]} ${startPercent}% ${currentPercent}%`);
+      }
+    }
+
+    if (stops.length === 0) {
+      return '#f5f5f5';
+    }
+
+    return `conic-gradient(${stops.join(', ')})`;
+  }
+
   getStatusCount(status: string): number {
     return this.attendanceRecords.filter(r => r.overall_status === status).length;
   }
@@ -422,7 +716,8 @@ export class AdminDashboardComponent implements OnInit {
       'late': '迟到',
       'severe_late': '严重迟到',
       'early_leave': '早退',
-      'absent': '缺勤'
+      'absent': '缺勤',
+      'leave': '请假'
     };
     return labels[status] || status;
   }

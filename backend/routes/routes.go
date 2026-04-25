@@ -36,6 +36,9 @@ func SetupRoutes(r *gin.Engine) {
 			employee.GET("/attendance/today", controllers.GetTodayAttendance)
 			employee.GET("/attendance/my", controllers.GetMyAttendanceRecords)
 			employee.GET("/attendance/my/stats", controllers.GetMyMonthlyStats)
+
+			employee.POST("/leaves", controllers.CreateLeave)
+			employee.GET("/leaves/my", controllers.GetMyLeaves)
 		}
 
 		admin := auth.Group("/admin")
@@ -45,6 +48,11 @@ func SetupRoutes(r *gin.Engine) {
 			admin.GET("/employees", controllers.GetAllEmployees)
 			admin.GET("/attendance/export", controllers.ExportMonthlySummary)
 			admin.GET("/employees/:id/attendance", controllers.GetEmployeeAttendance)
+
+			admin.GET("/leaves/pending", controllers.GetPendingLeaves)
+			admin.GET("/leaves", controllers.GetAllLeaves)
+			admin.PUT("/leaves/:id/approve", controllers.ApproveLeave)
+			admin.GET("/leaves/stats", controllers.GetLeaveStats)
 		}
 	}
 }

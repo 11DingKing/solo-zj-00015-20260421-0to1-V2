@@ -16,6 +16,7 @@ const (
 	StatusSevereLate  AttendanceStatus = "severe_late"
 	StatusEarlyLeave  AttendanceStatus = "early_leave"
 	StatusAbsent      AttendanceStatus = "absent"
+	StatusLeave       AttendanceStatus = "leave"
 )
 
 type CheckInType string

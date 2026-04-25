@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { trigger, state, style, animate, transition } from '@angular/animations';
 import { AttendanceService, Attendance, MonthlyStats } from '../services/attendance.service';
 import { AuthService } from '../services/auth.service';
@@ -46,6 +47,20 @@ import { AuthService } from '../services/auth.service';
       <div *ngIf="successMessage" [@fadeInOut] class="success-alert">
         <span class="check-icon">✓</span>
         {{ successMessage }}
+      </div>
+
+      <div class="nav-section card">
+        <h3>快捷操作</h3>
+        <div class="nav-grid">
+          <button (click)="goToLeaveRequest()" class="nav-card request">
+            <span class="nav-icon">📝</span>
+            <span class="nav-label">请假申请</span>
+          </button>
+          <button (click)="goToMyLeaves()" class="nav-card history">
+            <span class="nav-icon">📋</span>
+            <span class="nav-label">我的请假</span>
+          </button>
+        </div>
       </div>
 
       <div class="dashboard-grid">
@@ -144,6 +159,7 @@ import { AuthService } from '../services/auth.service';
               [class.status-severe]="getDayStatus(day) === 'severe_late'"
               [class.status-early]="getDayStatus(day) === 'early_leave'"
               [class.status-absent]="getDayStatus(day) === 'absent'"
+              [class.status-leave]="getDayStatus(day) === 'leave'"
               [class.other-month]="!isCurrentMonth(day)"
             >
               {{ day.getDate() }}
@@ -156,6 +172,7 @@ import { AuthService } from '../services/auth.service';
           <span class="legend-item severe">严重迟到</span>
           <span class="legend-item early">早退</span>
           <span class="legend-item absent">缺勤</span>
+          <span class="legend-item leave">请假</span>
         </div>
       </div>
     </div>
@@ -186,6 +203,41 @@ import { AuthService } from '../services/auth.service';
       align-items: center;
       justify-content: center;
       font-size: 14px;
+    }
+    .nav-section {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    .nav-section h3 {
+      color: white;
+      margin: 0 0 1rem 0;
+    }
+    .nav-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+    }
+    .nav-card {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 10px;
+      padding: 1.25rem;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .nav-card:hover {
+      background: rgba(255, 255, 255, 0.25);
+      transform: translateY(-2px);
+    }
+    .nav-icon {
+      font-size: 2rem;
+    }
+    .nav-label {
+      font-size: 1rem;
+      font-weight: 600;
     }
     .dashboard-grid {
       display: grid;
@@ -414,6 +466,10 @@ import { AuthService } from '../services/auth.service';
       background: #fee;
       color: #c00;
     }
+    .calendar-day.status-leave:not(.is-weekend) {
+      background: #e3f2fd;
+      color: #1565c0;
+    }
     .calendar-legend {
       display: flex;
       flex-wrap: wrap;
@@ -447,6 +503,10 @@ import { AuthService } from '../services/auth.service';
       background: #fee;
       color: #c00;
     }
+    .legend-item.leave {
+      background: #e3f2fd;
+      color: #1565c0;
+    }
   `]
 })
 export class EmployeeDashboardComponent implements OnInit {
@@ -466,7 +526,8 @@ export class EmployeeDashboardComponent implements OnInit {
 
   constructor(
     private attendanceService: AttendanceService,
-    private authService: AuthService
+    private authService: AuthService,
+    private router: Router
   ) {
     const now = new Date();
     this.currentYear = now.getFullYear();
@@ -478,6 +539,14 @@ export class EmployeeDashboardComponent implements OnInit {
     this.loadMonthlyStats();
     this.loadMonthAttendance();
     this.generateCalendar();
+  }
+
+  goToLeaveRequest(): void {
+    this.router.navigate(['/employee/leave-request']);
+  }
+
+  goToMyLeaves(): void {
+    this.router.navigate(['/employee/leaves']);
   }
 
   loadTodayAttendance(): void {
@@ -641,7 +710,8 @@ export class EmployeeDashboardComponent implements OnInit {
       'late': '迟到',
       'severe_late': '严重迟到',
       'early_leave': '早退',
-      'absent': '缺勤'
+      'absent': '缺勤',
+      'leave': '请假'
     };
     return labels[status] || status;
   }

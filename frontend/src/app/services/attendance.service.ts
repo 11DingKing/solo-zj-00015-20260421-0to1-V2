@@ -40,6 +40,45 @@ export interface CheckInResponse {
   attendance: Attendance;
 }
 
+export interface Leave {
+  id: number;
+  user_id: number;
+  leave_type: 'personal' | 'sick' | 'annual';
+  start_date: string;
+  end_date: string;
+  days: number;
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected';
+  approver_id: number | null;
+  approval_note: string;
+  created_at: string;
+  updated_at: string;
+  user?: User;
+  approver?: User;
+}
+
+export interface LeaveStats {
+  today_leave_count: number;
+  monthly_pending_count: number;
+  leave_type_distribution: {
+    type: string;
+    label: string;
+    days: number;
+  }[];
+}
+
+export interface CreateLeaveRequest {
+  leave_type: 'personal' | 'sick' | 'annual';
+  start_date: string;
+  end_date: string;
+  reason: string;
+}
+
+export interface ApproveLeaveRequest {
+  status: 'approved' | 'rejected';
+  approval_note?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -91,5 +130,35 @@ export class AttendanceService {
     if (startDate) params = params.set('start_date', startDate);
     if (endDate) params = params.set('end_date', endDate);
     return this.http.get<Attendance[]>(`${this.apiUrl}/admin/employees/${employeeId}/attendance`, { params });
+  }
+
+  createLeave(request: CreateLeaveRequest): Observable<any> {
+    return this.http.post(`${this.apiUrl}/leaves`, request);
+  }
+
+  getMyLeaves(status?: string): Observable<Leave[]> {
+    let params = new HttpParams();
+    if (status) params = params.set('status', status);
+    return this.http.get<Leave[]>(`${this.apiUrl}/leaves/my`, { params });
+  }
+
+  getPendingLeaves(): Observable<Leave[]> {
+    return this.http.get<Leave[]>(`${this.apiUrl}/admin/leaves/pending`);
+  }
+
+  getAllLeaves(status?: string, startDate?: string, endDate?: string): Observable<Leave[]> {
+    let params = new HttpParams();
+    if (status) params = params.set('status', status);
+    if (startDate) params = params.set('start_date', startDate);
+    if (endDate) params = params.set('end_date', endDate);
+    return this.http.get<Leave[]>(`${this.apiUrl}/admin/leaves`, { params });
+  }
+
+  approveLeave(leaveId: number, request: ApproveLeaveRequest): Observable<any> {
+    return this.http.put(`${this.apiUrl}/admin/leaves/${leaveId}/approve`, request);
+  }
+
+  getLeaveStats(): Observable<LeaveStats> {
+    return this.http.get<LeaveStats>(`${this.apiUrl}/admin/leaves/stats`);
   }
 }
