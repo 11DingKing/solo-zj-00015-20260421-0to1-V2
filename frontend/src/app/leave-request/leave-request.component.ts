@@ -111,7 +111,7 @@ import { AttendanceService, CreateLeaveRequest } from '../services/attendance.se
               [class.invalid]="reason.invalid && reason.touched"
               #reason="ngModel"
             ></textarea>
-            <div class="char-count">{{ leaveFormData.reason?.length || 0 }}/500</div>
+            <div class="char-count">{{ leaveFormData.reason.length || 0 }}/500</div>
             <div *ngIf="reason.invalid && reason.touched" class="error-text">
               请填写请假事由
             </div>
@@ -425,7 +425,7 @@ export class LeaveRequestComponent implements OnInit {
       this.leaveFormData.leave_type &&
       this.leaveFormData.start_date &&
       this.leaveFormData.end_date &&
-      this.leaveFormData.reason?.trim() &&
+      this.leaveFormData.reason.trim() &&
       this.calculatedDays > 0
     );
   }

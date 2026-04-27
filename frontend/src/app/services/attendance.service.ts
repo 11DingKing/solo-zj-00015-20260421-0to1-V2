@@ -60,7 +60,7 @@ export interface Leave {
 export interface LeaveStats {
   today_leave_count: number;
   monthly_pending_count: number;
-  leave_type_distribution: {
+  leave_type_distribution?: {
     type: string;
     label: string;
     days: number;

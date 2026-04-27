@@ -6,6 +6,8 @@ RUN apk add --no-cache git
 
 COPY . .
 
+ENV GOPROXY=https://goproxy.cn,direct
+ENV GONOSUMCHECK=*
 RUN go mod tidy
 
 RUN CGO_ENABLED=0 go build -o main .

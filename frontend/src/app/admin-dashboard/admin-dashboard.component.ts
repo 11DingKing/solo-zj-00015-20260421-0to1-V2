@@ -16,8 +16,8 @@ import { AttendanceService, Attendance, User, LeaveStats } from '../services/att
           <button (click)="goToApproval()" class="nav-card approval">
             <span class="nav-icon">📋</span>
             <span class="nav-label">请假审批</span>
-            <span *ngIf="leaveStats?.monthly_pending_count > 0" class="nav-badge">
-              {{ leaveStats.monthly_pending_count }}
+            <span *ngIf="(leaveStats?.monthly_pending_count ?? 0) > 0" class="nav-badge">
+              {{ leaveStats?.monthly_pending_count }}
             </span>
           </button>
           <button (click)="goToAllLeaves()" class="nav-card history">
