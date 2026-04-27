@@ -76,12 +76,12 @@ import { AttendanceService, Leave, ApproveLeaveRequest } from '../services/atten
               <div class="leave-dates">
                 <div class="date-item">
                   <span class="date-label">开始日期</span>
-                  <span class="date-value">{{ leave.start_date }}</span>
+                  <span class="date-value">{{ leave.start_date | date:'yyyy-MM-dd' }}</span>
                 </div>
                 <div class="date-arrow">→</div>
                 <div class="date-item">
                   <span class="date-label">结束日期</span>
-                  <span class="date-value">{{ leave.end_date }}</span>
+                  <span class="date-value">{{ leave.end_date | date:'yyyy-MM-dd' }}</span>
                 </div>
                 <div class="days-item">
                   <span class="days-value">{{ leave.days }}</span>

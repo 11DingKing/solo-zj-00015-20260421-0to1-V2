@@ -60,7 +60,7 @@ import { AttendanceService, Leave } from '../services/attendance.service';
             <div class="leave-body">
               <div class="leave-dates">
                 <span class="date-icon">📅</span>
-                <span class="date-text">{{ leave.start_date }} 至 {{ leave.end_date }}</span>
+                <span class="date-text">{{ leave.start_date | date:'yyyy-MM-dd' }} 至 {{ leave.end_date | date:'yyyy-MM-dd' }}</span>
                 <span class="days-badge">{{ leave.days }} 个工作日</span>
               </div>
 

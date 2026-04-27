@@ -107,7 +107,7 @@ import { AttendanceService, Attendance, User, LeaveStats } from '../services/att
             </thead>
             <tbody>
               <tr *ngFor="let record of attendanceRecords">
-                <td>{{ record.date }}</td>
+                <td>{{ record.date | date:'yyyy-MM-dd' }}</td>
                 <td>{{ record.user?.name }}</td>
                 <td>{{ formatTime(record.check_in_time) }}</td>
                 <td>
